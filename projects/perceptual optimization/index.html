@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="index, follow" />
+        <title>Haodong Chang - Perceptual Optimization</title>
+        <meta property="description" content="An introduction of major perceptual optimization algorithms and their reproduction." />
+        <meta property="og:title" content="Haodong Chang - perceptual optimization" />
+        <meta property="og:description" content="An introduction of major perceptual optimization algorithms and their reproduction." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://kutta96.io/projects/perceptual optimization/" />
+        <meta property="og:image" content="https://kutta96.io/projects/perceptual optimization/profile.png" />
+        <link rel="icon" type="image/png" href="/img/fruit.png">
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-170359979-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-170359979-1');
+        </script>
+        <link href="/assets/main.css" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Lato:wght@700&family=Roboto&family=Source+Code+Pro&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css" integrity="sha384-Bfad6CLCknfcloXFOyFnlgtENryhrpZCe29RTifKEixXQZ38WheV+i/6YWSzkz3V" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+        <script defer src="/assets/main.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script>
+    </head>
+    <body>
+        <nav>
+            <a href="/">Haodong Chang</a>
+            <a href="/about/">About</a>
+            <a href="/projects/">Projects</a>
+        </nav>
+        <main>
+            <header>
+                <h1>Perceptual Optimization</h1>
+                
+            </header>
+
+<h2>Background</h2>
+
+<p>According to the common framework based on HVS (Human Visual System)<sup>[1]</sup>, the key of improving MC rendering quality is to distribute the perceptual error as visually 
+    pleasing blue noise in image space. In other words, we observe the object by extracting the local information and we tend to combine each pixel with its neighborhood. 
+</p>
+
+<h2>Algorithms<sup>[1]</sup></h2>
+
+<p><b>Iterative minimization (the vertical search space)</b>. We search for all pixels and for each, choose the estimate that minimizes the perceptual error. 
+    Several full-image iterations are performed.
+    <br><b>Error diffusion</b>. We distribute the resulting pixel error to yet-unprocessed nearby pixels according to a given kernel.
+    <br><b>Dithering</b>. We quantize pixel values using thresholds stored in a pre-computed dither mask.
+    <br><b>Iterative minimization (the horizontal search space)</b>. The algorithm goes over all pixels and for each considers swaps within a small neighborhood. 
+    We record the swap that brings the largest reduction in perceptual error. Several full-image iterations are performed.
+</p>
+
+<h2>Results</h2>
+
+<p>I use the ground truth as the reference image. For all algorithms, the maximum depth is 5, and the sample count is 4spp. In my soft path tracer, the basic sampler is a 
+    random sampler and no filter is used. The size of the search space (vertical) is 2<sup>4</sup>-1=15, while it is 3×3 for horizontal search. The results can be compared 
+    by pMSE<sup>[1]</sup>, MSE and visual quality.
+    <br>The optimized result of the iterative minimization (the vertical search space) is showed. In terms of MSE, the initial image has lower MSE, which
+    means that it has smaller error magnitude. However, the initial image has higher pMSE, which means that it deviates from the visual fidelity, in contrast to the 
+    optimized image.
+</p>
+
+<p><center><img src="/projects/perceptual optimization/iterative vertical.png"/></center></p>
+
+<p>The error diffusion shows an obvious improvement both in the magnitude and distribution of errors. I use the classical diffusion kernel suggested by Floyd and Steinberg<sup>[2]</sup>.
+    The scanning order is opposite to each line.
+</p>
+
+<p><center><img src="/projects/perceptual optimization/error diffusion.png"/></center></p>
+
+<p>The comparison of the dithering indicates the importance and effectiveness of the evaluation standard - pMSE. Compared to the initial image, the reduction of the pMSE of the optimized image
+    is not obvious, although the MSE is halved. In this case, the improvement should be contributed to the reduction of the error magnitude.
+</p>
+
+<figure>
+    <div class="slider" style="max-width: 450px;">
+        <div class="leftImage">
+            <img src="/projects/perceptual optimization/dither1.png"/>
+            <span class="label whiteLabel">Initial Rendering Output</span>
+        </div>
+        <div class="rightImage">
+            <img src="/projects/perceptual optimization/dither2.png"/>
+            <span class="label whiteLabel">Optimized Output</span>
+        </div>
+        <div class="handle whiteHandle">
+            <div class="invisible"></div>
+            <div class="tab"></div>
+            <div class="leftArrow"></div>
+            <div class="rightArrow"></div>
+        </div>
+    </div>
+</figure>
+
+<p>For the iterative minimization (the horizontal search space), the MSE is not changed because only pixels within a small neighborhood are swapped. The reduction of the pMSE 
+    leads to the visually pleasing distribution. Note that although the principle of the iterative (horizontal) is more advanced, the local similarity assumption makes it same 
+    as the<a href="/projects/blue-noise dithering/">blue-noise dithered seed permutation</a>.
+</p>
+
+<figure>
+    <div class="slider" style="max-width: 450px;">
+        <div class="leftImage">
+            <img src="/projects/perceptual optimization/iterative horizontal1.png"/>
+            <span class="label whiteLabel">Initial Rendering Output</span>
+        </div>
+        <div class="rightImage">
+            <img src="/projects/perceptual optimization/iterative horizontal2.png"/>
+            <span class="label whiteLabel">Optimized Output</span>
+        </div>
+        <div class="handle whiteHandle">
+            <div class="invisible"></div>
+            <div class="tab"></div>
+            <div class="leftArrow"></div>
+            <div class="rightArrow"></div>
+        </div>
+    </div>
+</figure>
+
+<h2>Insights</h2>
+
+<h3>Initialization of iterative Algorithms</h3>
+
+<p>In addition to the effect of the reference image<sup>[1]</sup>, the initialization is equally important and has an impact on the convergence, speed and image quality.
+    Initialization of randomly selecting 15 expanded estimates is much better than initialization of choosing one of initial input estimates.
+</p>
+
+<p><center><img src="/projects/perceptual optimization/insight1.png"/></center></p>
+
+<h3>Overhead</h3>
+
+<p><a href="/projects/blue-noise dithering/">Blue-noise dithered sampling</a> is an elementary, but the first blue-noise method used in rendering optimization. 
+    Without any extra overhead, this method is suitable for simple scenes. The most obvious advantage is the fast speed as well as no extra overhead.
+    <br>However, all vertical search algorithms in this article would impose a burden on memory, and the space increases rapidly with the number of initial 
+    estimates. 
+</p> 
+
+<h3>Parallelization</h3>
+
+<p>All iterative methods are relatively time-consuming. The error diffusion and dithering are very fast and can be processed in parallel. The error diffusion shows 
+    the better result, and therefore can be considered. Parallelization is difficult for the other two iterative algorithms.
+</p>
+
+<h3>References</h3>
+
+<p>1. Chizhov V, Georgiev I, Myszkowski K, et al. "Perceptual error optimization for Monte Carlo rendering." <i>SIGGRAPH 2022</i>, 2022.
+    <br>2. Robert W. Floyd and Louis Steinberg. “An Adaptive Algorithm for Spatial Greyscale.” <i>Proceedings of the Society for Information Display</i>, 1976.
+</p>
+
+        </main>
+        <footer>Updated in September 2022</footer>
+    </body>
+</html>
